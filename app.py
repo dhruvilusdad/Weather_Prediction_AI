@@ -33,15 +33,54 @@ except FileNotFoundError:
 # CUSTOM CSS
 # =====================================
 
+theme_mode = st.radio(
+    "Display theme",
+    ("Dark", "Light"),
+    horizontal=True,
+    key="weather_display_theme",
+)
+
+if theme_mode == "Dark":
+    theme_tokens = """
+    color-scheme: dark;
+    --page-background:
+        radial-gradient(ellipse at 12% 8%, rgba(34, 211, 238, 0.12), transparent 38%),
+        radial-gradient(ellipse at 88% 18%, rgba(124, 58, 237, 0.16), transparent 36%),
+        linear-gradient(135deg, #071426 0%, #0c1e39 52%, #111a3b 100%);
+    --surface: rgba(8, 24, 48, 0.86);
+    --surface-strong: rgba(7, 20, 38, 0.96);
+    --text: #FFFFFF;
+    --muted-text: #C4D5E8;
+    --accent: #22D3EE;
+    --border: rgba(117, 215, 255, 0.28);
+    --shadow: rgba(0, 0, 0, 0.28);
+    --placeholder: rgba(255, 255, 255, 0.58);
+    --button-background: linear-gradient(100deg, #0E7490 0%, #4F46E5 58%, #7C3AED 100%);
+    --title-glow: rgba(34, 211, 238, 0.2);
+    """
+else:
+    theme_tokens = """
+    color-scheme: light;
+    --page-background:
+        radial-gradient(ellipse at 10% 5%, rgba(37, 99, 235, 0.12), transparent 40%),
+        radial-gradient(ellipse at 90% 12%, rgba(124, 58, 237, 0.08), transparent 38%),
+        linear-gradient(135deg, #F4FAFF 0%, #EAF4FF 52%, #F8FAFF 100%);
+    --surface: rgba(255, 255, 255, 0.78);
+    --surface-strong: rgba(255, 255, 255, 0.94);
+    --text: #10233F;
+    --muted-text: #425875;
+    --accent: #2563EB;
+    --border: rgba(37, 99, 235, 0.2);
+    --shadow: rgba(30, 64, 110, 0.12);
+    --placeholder: rgba(16, 35, 63, 0.5);
+    --button-background: linear-gradient(100deg, #2563EB 0%, #4F46E5 58%, #7C3AED 100%);
+    --title-glow: rgba(37, 99, 235, 0.12);
+    """
+
 st.markdown("""
 <style>
 :root {
-    color-scheme: dark;
-    --navy-glass: rgba(8, 20, 43, 0.82);
-    --navy-deep: rgba(5, 15, 34, 0.92);
-    --glass-border: rgba(117, 215, 255, 0.28);
-    --cyan: #75D7FF;
-    --white: #FFFFFF;
+    THEME_TOKENS
 }
 
 html,
@@ -50,7 +89,6 @@ body,
 [data-testid="stMain"],
 [data-testid="stMainBlockContainer"],
 [data-testid="stVerticalBlock"],
-[data-testid="stVerticalBlockBorderWrapper"],
 [data-testid="stElementContainer"],
 [data-testid="stHeader"],
 [data-testid="stToolbar"] {
@@ -58,12 +96,9 @@ body,
 }
 
 .stApp {
-    background:
-        radial-gradient(ellipse at 12% 8%, rgba(37, 99, 235, 0.2), transparent 38%),
-        radial-gradient(ellipse at 88% 18%, rgba(124, 58, 237, 0.18), transparent 36%),
-        linear-gradient(135deg, #071426 0%, #0c1e39 52%, #111a3b 100%) !important;
+    background: var(--page-background) !important;
     background-attachment: fixed !important;
-    color: var(--white);
+    color: var(--text) !important;
 }
 
 [data-testid="stMainBlockContainer"] {
@@ -71,153 +106,200 @@ body,
     padding-bottom: 2.5rem;
 }
 
-h1, h2, h3, h4, p, label, [data-testid="stCaptionContainer"] {
-    color: var(--white) !important;
+h1, h2, h3, h4, p, label,
+[data-testid="stCaptionContainer"],
+[data-testid="stMarkdownContainer"] {
+    color: var(--text) !important;
 }
 
 .main-title {
     text-align: center;
     font-size: 38px;
     font-weight: bold;
-    color: var(--white) !important;
-    text-shadow: 0 3px 22px rgba(117, 215, 255, 0.2);
+    color: var(--text) !important;
+    text-shadow: 0 3px 22px var(--title-glow);
 }
 
 .subtitle {
     text-align: center;
-    color: var(--cyan) !important;
+    color: var(--accent) !important;
     font-size: 16px;
 }
 
+[data-testid="stRadio"] {
+    margin-bottom: 0.35rem;
+}
+
+[data-testid="stRadio"] > label,
+[data-testid="stRadio"] [role="radio"],
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p {
+    color: var(--text) !important;
+}
+
+[data-testid="stRadio"] [role="radio"] > div:first-child {
+    border-color: var(--border) !important;
+}
+
+[data-testid="stRadio"] [role="radio"][aria-checked="true"] > div:first-child {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+
 [data-testid="stForm"] {
-    background: linear-gradient(
-        135deg,
-        rgba(10, 28, 57, 0.9),
-        rgba(29, 28, 69, 0.78)
-    ) !important;
-    border: 1px solid var(--glass-border) !important;
+    background: linear-gradient(135deg, var(--surface), var(--surface-strong)) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 18px !important;
     padding: 1.25rem 1.4rem !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 12px 32px var(--shadow);
+    backdrop-filter: blur(14px);
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(135deg, var(--surface), var(--surface-strong)) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 28px var(--shadow);
     backdrop-filter: blur(14px);
 }
 
 [data-testid="stTextInput"] > label,
 [data-testid="stTextInput"] label,
 [data-testid="stTextInput"] p {
-    color: var(--white) !important;
+    color: var(--text) !important;
 }
 
 [data-testid="stTextInput"] > div,
 [data-testid="stTextInput"] div[data-baseweb="input"],
 [data-testid="stTextInput"] div[data-baseweb="base-input"] {
-    background: transparent !important;
+    background: var(--surface-strong) !important;
+    border-radius: 12px !important;
 }
 
 [data-testid="stTextInput"] input {
-    background: var(--navy-deep) !important;
-    color: var(--white) !important;
-    border: 1px solid rgba(117, 215, 255, 0.36) !important;
+    background: var(--surface-strong) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 12px !important;
-    caret-color: var(--cyan);
+    caret-color: var(--accent);
 }
 
 [data-testid="stTextInput"] input::placeholder {
-    color: rgba(255, 255, 255, 0.58) !important;
+    color: var(--placeholder) !important;
     opacity: 1;
 }
 
 [data-testid="stTextInput"] input:focus {
-    border-color: var(--cyan) !important;
-    box-shadow: 0 0 0 2px rgba(117, 215, 255, 0.2) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px var(--border) !important;
 }
 
 [data-testid="stAlert"] {
-    background: linear-gradient(
-        120deg,
-        rgba(8, 25, 51, 0.96),
-        rgba(27, 29, 67, 0.9)
-    ) !important;
-    color: var(--white) !important;
-    border: 1px solid var(--glass-border) !important;
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+[data-testid="stAlert"] [data-testid="stAlertContainer"] {
+    background: linear-gradient(120deg, var(--surface-strong), var(--surface)) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 14px !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 24px var(--shadow);
     backdrop-filter: blur(12px);
 }
 
-[data-testid="stAlert"] *,
+[data-testid="stAlert"] [data-testid^="stAlertContent"],
+[data-testid="stAlert"] [data-testid="stMarkdownContainer"],
 [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p {
-    color: var(--white) !important;
+    background: transparent !important;
+    color: var(--text) !important;
 }
 
-[data-testid="stAlert"] svg {
-    color: var(--cyan) !important;
-    fill: var(--cyan) !important;
+[data-testid="stAlert"] [data-testid="stAlertContainer"] svg {
+    color: var(--accent) !important;
+    fill: var(--accent) !important;
 }
 
 .result-card {
     background:
-        radial-gradient(ellipse at 10% 0%, rgba(37, 99, 235, 0.2), transparent 48%),
-        linear-gradient(135deg, rgba(8, 23, 49, 0.94), rgba(27, 27, 66, 0.88)) !important;
+        radial-gradient(ellipse at 10% 0%, var(--border), transparent 48%),
+        linear-gradient(135deg, var(--surface-strong), var(--surface)) !important;
     padding: 25px;
     border-radius: 18px;
     text-align: center;
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    box-shadow: 0 14px 36px var(--shadow);
     backdrop-filter: blur(14px);
 }
 
 .result-card h3,
 .result-card p {
-    color: var(--white) !important;
+    color: var(--text) !important;
 }
 
 .result-temp {
     font-size: 48px;
     font-weight: bold;
-    color: var(--cyan) !important;
-    text-shadow: 0 0 24px rgba(117, 215, 255, 0.22);
+    color: var(--accent) !important;
+    text-shadow: 0 0 24px var(--title-glow);
 }
 
 div[data-testid="stFormSubmitButton"] button,
 .stFormSubmitButton button {
-    background: linear-gradient(100deg, #2563eb 0%, #6d4ce8 55%, #7c3aed 100%) !important;
-    color: var(--white) !important;
-    border: 1px solid rgba(185, 210, 255, 0.25) !important;
+    background: var(--button-background) !important;
+    color: #FFFFFF !important;
+    border: 1px solid var(--border) !important;
     border-radius: 12px !important;
     font-weight: 700 !important;
-    box-shadow: 0 8px 22px rgba(68, 73, 210, 0.28);
+    box-shadow: 0 8px 22px var(--shadow);
     transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 div[data-testid="stFormSubmitButton"] button *,
 .stFormSubmitButton button * {
-    color: var(--white) !important;
+    color: #FFFFFF !important;
 }
 
 div[data-testid="stFormSubmitButton"] button:hover,
 .stFormSubmitButton button:hover {
-    color: var(--white) !important;
+    color: #FFFFFF !important;
     filter: brightness(1.12);
     transform: translateY(-2px);
-    box-shadow: 0 10px 26px rgba(79, 70, 229, 0.42);
+    box-shadow: 0 10px 26px var(--shadow);
 }
 
 div[data-testid="stFormSubmitButton"] button:focus,
 .stFormSubmitButton button:focus {
-    color: var(--white) !important;
-    box-shadow: 0 0 0 3px rgba(117, 215, 255, 0.35) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 0 0 3px var(--border) !important;
 }
 
 [data-testid="stMarkdownContainer"] a {
-    color: var(--cyan) !important;
+    color: var(--accent) !important;
 }
 
 [data-testid="stDivider"] {
-    border-color: rgba(117, 215, 255, 0.2) !important;
+    border-color: var(--border) !important;
+}
+
+@media (max-width: 640px) {
+    [data-testid="stMainBlockContainer"] {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    .main-title {
+        font-size: 30px;
+    }
+
+    .result-card {
+        padding: 20px 14px;
+    }
+
+    .result-temp {
+        font-size: 42px;
+    }
 }
 </style>
-""", unsafe_allow_html=True)
+""".replace("THEME_TOKENS", theme_tokens), unsafe_allow_html=True)
 
 # =====================================
 # HEADER
