@@ -6,7 +6,7 @@ A Python and Streamlit application that estimates a city's temperature from its 
 
 ## Features
 
-- City-name lookup through the OpenStreetMap Nominatim geocoding service.
+- City-name lookup through the Open-Meteo Geocoding API.
 - Temperature prediction in Celsius using latitude and longitude.
 - Streamlit interface with location details and a simple temperature category.
 - Included training notebook, weather dataset, trained model, and model feature names.
@@ -17,15 +17,15 @@ A Python and Streamlit application that estimates a city's temperature from its 
 - Streamlit
 - scikit-learn and joblib
 - pandas and NumPy
-- geopy / OpenStreetMap Nominatim
+- requests / Open-Meteo Geocoding API
 - Jupyter, Matplotlib, Seaborn, and XGBoost for the training notebook
 
 ## Project files
 
 | File | Purpose |
 | --- | --- |
-| `app.py` | Recommended Streamlit application entry point |
-| `app1.py` | Original application script (preserved) |
+| `app.py` | Streamlit application entry point |
+| `app1.py` | Preserved project application script |
 | `weather_prediction_model.pkl` | Trained Random Forest regression model |
 | `weather_feature_names.pkl` | Ordered model feature names |
 | `weather.csv` | Weather dataset used by the project |
@@ -67,7 +67,7 @@ From the project directory, run:
 streamlit run app.py
 ```
 
-Open the local URL printed by Streamlit. City lookup requires an internet connection to reach Nominatim.
+Open the local URL printed by Streamlit. City lookup requires an internet connection to reach the Open-Meteo Geocoding API.
 
 ## Model information
 

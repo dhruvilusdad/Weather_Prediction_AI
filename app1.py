@@ -2,8 +2,7 @@
 import streamlit as st
 import joblib
 import pandas as pd
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
+import requests
 
 # =====================================
 # PAGE CONFIGURATION
@@ -28,6 +27,7 @@ try:
 except FileNotFoundError:
     st.error("Model file not found! Check your project folder.")
     st.stop()
+    raise
 
 # =====================================
 # CUSTOM CSS
@@ -69,6 +69,30 @@ h1, h2, h3, p, label {
     font-weight: bold;
     color: #ffd166;
 }
+
+div[data-testid="stFormSubmitButton"] button,
+.stFormSubmitButton button {
+    background: linear-gradient(90deg, #2563eb, #7c3aed) !important;
+    color: #ffffff !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+div[data-testid="stFormSubmitButton"] button:hover,
+.stFormSubmitButton button:hover {
+    color: #ffffff !important;
+    filter: brightness(1.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+}
+
+div[data-testid="stFormSubmitButton"] button:focus,
+.stFormSubmitButton button:focus {
+    color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.55) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -94,92 +118,116 @@ st.divider()
 
 st.subheader("📍 Enter Your City")
 
-city = st.text_input(
-    "City Name",
-    placeholder="Example: Rajkot, Ahmedabad, Mumbai..."
-)
+with st.form("city_prediction_form"):
+    city = st.text_input(
+        "City Name",
+        placeholder="Example: Rajkot, Ahmedabad, Mumbai..."
+    )
+    submitted = st.form_submit_button(
+        "🌡️ Predict Temperature",
+        use_container_width=True,
+        type="primary"
+    )
 
 st.caption("Enter any supported city name to predict its temperature.")
-
 # =====================================
 # GEOCODING
 # =====================================
 
-if st.button("🌡️ Predict Temperature", use_container_width=True):
-
+if submitted:
     if not city.strip():
         st.warning("Please enter a city name.")
 
     else:
         with st.spinner("Finding city location..."):
-
             try:
-                geolocator = Nominatim(
-                    user_agent="weather_prediction_ai_app"
+                response = requests.get(
+                    "https://geocoding-api.open-meteo.com/v1/search",
+                    params={
+                        "name": city.strip(),
+                        "count": 1,
+                        "language": "en",
+                        "format": "json",
+                    },
+                    timeout=10,
+                )
+                response.raise_for_status()
+                geocoding_data = response.json()
+            except requests.Timeout:
+                st.error("City lookup timed out. Please try again.")
+            except requests.RequestException:
+                st.error("City lookup service is unavailable. Please try again.")
+            else:
+                results = (
+                    geocoding_data.get("results", [])
+                    if isinstance(geocoding_data, dict)
+                    else None
                 )
 
-                location = geolocator.geocode(
-                    city.strip(),
-                    timeout=15
-                )
-
-                if location is None:
+                if not isinstance(results, list):
+                    st.error("City lookup returned an invalid response. Please try again.")
+                elif not results:
                     st.error("City not found. Please try another city.")
-
+                elif not isinstance(results[0], dict):
+                    st.error("City lookup returned an invalid response. Please try again.")
                 else:
-                    latitude = location.latitude
-                    longitude = location.longitude
+                    location = results[0]
+                    latitude = location.get("latitude")
+                    longitude = location.get("longitude")
 
-                    # Prepare model input
-                    input_data = pd.DataFrame(
-                        [[latitude, longitude]],
-                        columns=["latitude", "longitude"]
-                    )
-
-                    # Prediction
-                    prediction = model.predict(input_data)[0]
-
-                    # Result
-                    st.success("Prediction Completed Successfully!")
-
-                    st.markdown(
-                        f"""
-                        <div class="result-card">
-                            <h3>🌍 {city.title()}</h3>
-                            <p>Predicted Temperature</p>
-                            <div class="result-temp">
-                                {prediction:.2f} °C
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                    st.write(" ")
-
-                    st.info(
-                        f"📍 Location: {location.address}"
-                    )
-
-                    st.write(
-                        f"Latitude: {latitude:.4f} | "
-                        f"Longitude: {longitude:.4f}"
-                    )
-
-                    if prediction >= 30:
-                        st.warning("🔥 Model Prediction: Hot Weather")
-
-                    elif prediction >= 20:
-                        st.info("☀️ Model Prediction: Pleasant Weather")
-
+                    if (
+                        not isinstance(latitude, (int, float))
+                        or isinstance(latitude, bool)
+                        or not isinstance(longitude, (int, float))
+                        or isinstance(longitude, bool)
+                    ):
+                        st.error("The city lookup returned invalid coordinates.")
                     else:
-                        st.info("❄️ Model Prediction: Cool Weather")
+                        location_name = ", ".join(
+                            str(part)
+                            for part in (
+                                location.get("name"),
+                                location.get("admin1"),
+                                location.get("country"),
+                            )
+                            if part
+                        )
 
-            except (GeocoderTimedOut, GeocoderUnavailable):
-                st.error("Location service unavailable. Please try again.")
+                        # Keep the trained model input and feature order unchanged.
+                        input_data = pd.DataFrame(
+                            [[latitude, longitude]],
+                            columns=["latitude", "longitude"]
+                        )
+                        prediction = model.predict(input_data)[0]
 
-            except Exception as e:
-                st.error(f"Prediction Error: {e}")
+                        st.success("Prediction Completed Successfully!")
+
+                        st.markdown(
+                            f"""
+                            <div class="result-card">
+                                <h3>🌍 {location_name}</h3>
+                                <p>Predicted Temperature</p>
+                                <div class="result-temp">
+                                    {prediction:.2f} °C
+                                </div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+
+                        st.write(" ")
+                        st.info(f"📍 Location: {location_name}")
+                        st.write(
+                            f"Latitude: {latitude:.4f} | "
+                            f"Longitude: {longitude:.4f}"
+                        )
+
+                        if prediction >= 30:
+                            st.warning("🔥 Model Prediction: Hot Weather")
+                        elif prediction >= 20:
+                            st.info("☀️ Model Prediction: Pleasant Weather")
+                        else:
+                            st.info("❄️ Model Prediction: Cool Weather")
 
 # =====================================
 # FOOTER
